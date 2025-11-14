@@ -13,7 +13,6 @@ Skema awal berasal dari DDL PostgreSQL (tabel: `mahasiswa`, `dosen`, `fakultas`,
 - PyMongo
 - Faker (id_ID)
 - Pydantic
-- Miniconda (disarankan)
 
 ---
 
@@ -25,9 +24,10 @@ project2/
 ├─ models.py           # Pydantic models
 ├─ seed_data.py        # seluruh fungsi seed_*
 ├─ main_seed.py        # entry point untuk menjalankan semua seed
+├─ docker-compose.yml  # compose untuk mongodb
 ├─ requirements.txt
-├─ .gitignore
 ├─ .env
+├─ .gitignore
 └─ README.md
 ```
 
@@ -35,8 +35,9 @@ project2/
 
 ## 3. Cara Menjalankan
 
-### 3.1 Install Requirement
+### 3.1 Setup
 ```
+create .env file based on .env.example
 python -m pip install -r requirements.txt
 ```
 
@@ -68,3 +69,5 @@ NUM_DOSEN = 3540
 NUM_MAHASISWA = 33296
 NUM_RUANGAN = 150
 ```
+
+---
