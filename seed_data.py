@@ -588,6 +588,14 @@ def seed_jadwal_kuliah():
     ruangan_list = list(db.ruangan.find({}))
     mhs_list = list(db.mahasiswa.find({}))
 
+    # contoh slot jam
+    time_slots = [
+        ("08:00", "09:40"),
+        ("09:00", "10:40"),  # overlap dengan 08:00–09:40
+        ("10:00", "11:40"),
+        ("13:00", "14:40"),
+    ]
+
     docs = []
     for p in pengampu_list:
         if not ruangan_list:
@@ -595,22 +603,18 @@ def seed_jadwal_kuliah():
         r = random.choice(ruangan_list)
 
         base_date = datetime(2024, 9, 1)
-        # 12 pertemuan per matkul → 2,800 * 12 ≈ 33,600 (dekat 35,525)
         for week in range(1, 13):
-            tanggal = base_date + timedelta(weeks=week-1)
-            jam_mulai = "08:00"
-            jam_selesai = "09:40"
+            tanggal = base_date + timedelta(weeks=week - 1)
 
-            # 30–40 peserta per pertemuan → avg ≈ 33 → 33,600*33 ≈ 1,1M
+            jam_mulai, jam_selesai = random.choice(time_slots)
+
             num_peserta = random.randint(30, 40)
             peserta = random.sample(mhs_list, min(len(mhs_list), num_peserta))
 
-            kehadiran = []
-            for m in peserta:
-                kehadiran.append({
-                    "nim": m["nim"],
-                    "isHadir": random.random() > 0.2,
-                })
+            kehadiran = [
+                {"nim": m["nim"], "isHadir": random.random() > 0.2}
+                for m in peserta
+            ]
 
             docs.append({
                 "kodeProdi": p["kodeProdi"],
