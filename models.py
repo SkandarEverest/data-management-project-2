@@ -41,6 +41,12 @@ class Biodata(BaseModel):
     wargaNegara: Optional[str] = None
     nik: Optional[str] = None
     agama: Optional[str] = None
+    anakKe: Optional[int] = None
+    jumlahAnak: Optional[int] = None
+    penyediaAsuransiKesehatan: Optional[str] = None
+    nomorKartuAsuransiKesehatan: Optional[str] = None
+    jenisAsuransiKesehatan: Optional[str] = None
+    masaBerlakuAsuransiKesehatan: Optional[datetime] = None
 
 class Alamat(BaseModel):
     tipeAlamat: TipeAlamatEnum
@@ -60,11 +66,14 @@ class OrangTua(BaseModel):
     pekerjaan: Optional[str] = None
     instansiBekerja: Optional[str] = None
     pendidikan: Optional[str] = None
+    tanggalLahir: Optional[datetime] = None
+    statusKehidupan: Optional[str] = None       # misal: 'Hidup' / 'Meninggal'
 
 class StatusKeuangan(BaseModel):
     semester: int
-    tagihan: Optional[float] = None
-    pembayaran: Optional[float] = None
+    tagihan: float
+    pembayaran: float
+    batasPembayaran: Optional[datetime] = None
 
 class TugasAkhir(BaseModel):
     judulBahasaInggris: Optional[str] = None
@@ -95,3 +104,27 @@ class Mahasiswa(BaseModel):
     statusKeuangan: List[StatusKeuangan] = []
     tugasAkhir: Optional[TugasAkhir] = None
     alumni: Optional[Alumni] = None
+
+class MataKuliahRS(BaseModel):
+    kodeProdi: str
+    tahun: int
+    kodeMatkul: str
+    disetujui: bool
+    nilai: Optional[str] = None
+
+class RencanaStudi(BaseModel):
+    nim: str
+    tahunAjaran: str
+    semester: int
+
+    pengirimanRencanaStudi: Optional[datetime] = None
+    persetujuanDosenWali: Optional[datetime] = None
+    pembayaranUkt: bool = False
+    pengesahanKsm: Optional[datetime] = None
+    pengirimanRencanaStudiPrs: Optional[datetime] = None
+    persetujuanDosenWaliPrs: Optional[datetime] = None
+    pengesahanKsmPengganti: Optional[datetime] = None
+
+    maksimalBeban: Optional[int] = None
+    mataKuliah: List[MataKuliahRS]
+

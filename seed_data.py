@@ -5,7 +5,7 @@ from db import get_db
 from models import (
     Fakultas, ProgramStudi, Dosen, Mahasiswa,
     Biodata, Alamat, OrangTua, StatusKeuangan,
-    TugasAkhir, Alumni,
+    TugasAkhir, Alumni, RencanaStudi, MataKuliahRS,
 )
 
 fake = Faker("id_ID")  # locale Indonesia
@@ -107,16 +107,41 @@ def seed_dosen(n=NUM_DOSEN):
 def random_biodata():
     dob = fake.date_of_birth(minimum_age=18, maximum_age=25)
     dob_dt = datetime.combine(dob, datetime.min.time())
+    anak_ke = random.choice([None, 1, 2])
+    jumlah_anak = random.choice([None, 1, 2, 3])
+
+    has_insurance = random.random() < 0.6
+    if has_insurance:
+        penyedia = random.choice(["BPJS Kesehatan", "Prudential", "AXA", "Allianz"])
+        nomor_kartu = str(fake.random_number(digits=13))
+        jenis_asuransi = random.choice(["Publik", "Swasta"])
+        masa_berlaku = datetime(
+            2026,
+            random.randint(1, 12),
+            random.randint(1, 28),
+        )
+    else:
+        penyedia = None
+        nomor_kartu = None
+        jenis_asuransi = None
+        masa_berlaku = None
+
     return Biodata(
         pasFoto=f"{fake.file_name(extension='jpg')}",
         namaDiDokumenKuliah=fake.name(),
-        jenisKelamin=random.choice(['L','P']),
+        jenisKelamin=random.choice(['L', 'P']),
         tanggalLahir=dob_dt,
         negaraKelahiran="Indonesia",
-        statusPernikahan=random.choice(['Belum Menikah','Menikah']),
+        statusPernikahan=random.choice(['Belum Menikah', 'Menikah']),
         wargaNegara="Indonesia",
         nik=str(fake.random_number(digits=16)),
-        agama=random.choice(["Islam","Kristen","Katolik","Hindu","Buddha","Konghucu"]),
+        agama=random.choice(["Islam", "Kristen", "Katolik", "Hindu", "Buddha", "Konghucu"]),
+        anakKe=anak_ke,
+        jumlahAnak=jumlah_anak,
+        penyediaAsuransiKesehatan=penyedia,
+        nomorKartuAsuransiKesehatan=nomor_kartu,
+        jenisAsuransiKesehatan=jenis_asuransi,
+        masaBerlakuAsuransiKesehatan=masa_berlaku,
     )
 
 def random_alamat():
@@ -166,6 +191,10 @@ def random_alamat():
     return base
 
 def random_orang_tua():
+    def random_parent_dob():
+        dob = fake.date_of_birth(minimum_age=40, maximum_age=60)
+        return datetime.combine(dob, datetime.min.time())
+
     return [
         OrangTua(
             nama=fake.name_male(),
@@ -173,7 +202,9 @@ def random_orang_tua():
             penghasilanKotor=float(fake.random_int(min=5_000_000, max=30_000_000)),
             pekerjaan="Karyawan Swasta",
             instansiBekerja=fake.company(),
-            pendidikan=random.choice(["SMA","S1","S2"]),
+            pendidikan=random.choice(["SMA", "S1", "S2"]),
+            tanggalLahir=random_parent_dob(),
+            statusKehidupan=random.choice(["Hidup", "Meninggal"]),
         ),
         OrangTua(
             nama=fake.name_female(),
@@ -181,25 +212,38 @@ def random_orang_tua():
             penghasilanKotor=float(fake.random_int(min=3_000_000, max=20_000_000)),
             pekerjaan="Ibu Rumah Tangga",
             instansiBekerja=None,
-            pendidikan=random.choice(["SMA","S1"]),
+            pendidikan=random.choice(["SMA", "S1"]),
+            tanggalLahir=random_parent_dob(),
+            statusKehidupan=random.choice(["Hidup", "Meninggal"]),
         )
     ]
 
 def random_status_keuangan():
     sk_list = []
 
-    # pilih jumlah semester 3–5 dengan rata2 ≈ 4
+    # jumlah semester 3–5 dengan rata2 ≈ 4
     num_sem = random.choice([3, 4, 4, 5])  # 3,4,4,5 → avg 4
+
+    # misal basis tahun ajaran 2024, tiap semester punya due date
+    base_year = 2024
+
     for sem in range(1, num_sem + 1):
         tagihan = float(fake.random_int(min=5_000_000, max=15_000_000))
         pembayaran = tagihan if random.random() > 0.2 else tagihan * 0.5
+
+        # batas pembayaran: misal 31 Maret / 31 Juli / 30 November / 31 Januari
+        if sem % 2 == 1:
+            batas = datetime(base_year, 3, 31)
+        else:
+            batas = datetime(base_year, 7, 31)
+
         sk_list.append(StatusKeuangan(
             semester=sem,
             tagihan=tagihan,
             pembayaran=pembayaran,
+            batasPembayaran=batas,
         ))
     return sk_list
-
 
 def random_tugas_akhir(dosen_list):
     pembimbing1 = random.choice(dosen_list)["nip"]
@@ -443,7 +487,6 @@ def seed_rencana_studi():
     docs = []
 
     for m in mhs_list:
-        # 4 rencana studi per mahasiswa (misal 4 semester)
         for sem in [1, 2, 3, 4]:
             tahun_ajaran = "2024/2025"
             kur = kur_by_prodi.get(m["kodeProdi"])
@@ -454,27 +497,45 @@ def seed_rencana_studi():
             if len(all_mk) == 0:
                 continue
 
-            # ambil 7 matkul random per rencana studi
             mk_list = random.sample(all_mk, min(TARGET_MK_PER_RS, len(all_mk)))
 
-            mata_kuliah_rs = []
+            mk_rs_list = []
             for mk in mk_list:
-                mata_kuliah_rs.append({
-                    "kodeProdi": m["kodeProdi"],
-                    "tahun": kur["tahun"],
-                    "kodeMatkul": mk["kodeMatkul"],
-                    "disetujui": random.random() > 0.1,
-                    "nilai": random.choice(nilai_enum) if sem < 4 else None,
-                })
+                mk_rs_list.append(MataKuliahRS(
+                    kodeProdi=m["kodeProdi"],
+                    tahun=kur["tahun"],
+                    kodeMatkul=mk["kodeMatkul"],
+                    disetujui=random.random() > 0.1,
+                    nilai=random.choice(nilai_enum) if sem < 4 else None,
+                ))
 
-            docs.append({
-                "nim": m["nim"],
-                "tahunAjaran": tahun_ajaran,
-                "semester": sem,
-                "pembayaranUkt": True,
-                "maksimalBeban": 24,
-                "mataKuliah": mata_kuliah_rs,
-            })
+            # simulasi status KRS
+            if random.random() < 0.4:
+                pengiriman = None
+                persetujuan = None
+                pengesahan = None
+            else:
+                base_date = datetime(2024, 8, 1)
+                pengiriman = base_date + timedelta(days=random.randint(0, 14))
+                persetujuan = pengiriman + timedelta(days=random.randint(0, 3))
+                pengesahan = persetujuan + timedelta(days=random.randint(0, 3))
+
+            rs = RencanaStudi(
+                nim=m["nim"],
+                tahunAjaran=tahun_ajaran,
+                semester=sem,
+                pengirimanRencanaStudi=pengiriman,
+                persetujuanDosenWali=persetujuan,
+                pembayaranUkt=True,
+                pengesahanKsm=pengesahan,
+                pengirimanRencanaStudiPrs=None,
+                persetujuanDosenWaliPrs=None,
+                pengesahanKsmPengganti=None,
+                maksimalBeban=24,
+                mataKuliah=mk_rs_list,
+            )
+
+            docs.append(rs.model_dump())
 
     if docs:
         db.rencana_studi.insert_many(docs)
