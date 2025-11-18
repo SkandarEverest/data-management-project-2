@@ -28,6 +28,7 @@ class Dosen(BaseModel):
     kodeFakultas: str
     kelompokKeahlian: Optional[str] = None
     jabatanFungsional: Optional[str] = None
+    usernames: list[str] | None = None 
 
 # ---------- Subdocs untuk Mahasiswa ----------
 

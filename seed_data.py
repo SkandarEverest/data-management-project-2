@@ -398,53 +398,36 @@ def seed_ruangan(n=150):
 
 def seed_akun():
     db.akun.delete_many({})
-    docs = []
 
-    # akun dosen
     dosen_list = list(db.dosen.find({}))
+    mhs_list = list(db.mahasiswa.find({}))
+
+    akun_docs = []
+
     for d in dosen_list:
         username = f"dosen_{d['nip'][-5:]}"
-        docs.append({
+        akun_docs.append({
             "username": username,
             "password": "hashed_password_dummy",
             "tipe": "dosen",
         })
+        db.dosen.update_one(
+            {"_id": d["_id"]},
+            {"$set": {"usernames": [username]}}
+        )
 
-    # akun mahasiswa (akan di-link belakangan)
-    mhs_list = list(db.mahasiswa.find({}))
+    # akun mahasiswa
     for m in mhs_list:
         username = f"mhs_{m['nim']}"
-        docs.append({
+        akun_docs.append({
             "username": username,
             "password": "hashed_password_dummy",
             "tipe": "mahasiswa",
         })
 
-    if docs:
-        db.akun.insert_many(docs)
-    print("Inserted akun:", len(docs))
-    return docs
-
-def seed_akun_dosen():
-    db.akun_dosen.delete_many({})
-
-    dosen_list = list(db.dosen.find({}))
-    akun_list = list(db.akun.find({"tipe": "dosen"}))
-    akun_by_suffix = {a["username"].split("_")[-1]: a["username"] for a in akun_list}
-
-    docs = []
-    for d in dosen_list:
-        suffix = d["nip"][-5:]
-        username = akun_by_suffix.get(suffix)
-        if username:
-            docs.append({
-                "username": username,
-                "nip": d["nip"],
-            })
-    if docs:
-        db.akun_dosen.insert_many(docs)
-    print("Inserted akun_dosen:", len(docs))
-    return docs
+    if akun_docs:
+        db.akun.insert_many(akun_docs)
+    print("Inserted akun:", len(akun_docs))
 
 def seed_calon_mahasiswa_baru():
     db.calon_mahasiswa_baru.delete_many({})

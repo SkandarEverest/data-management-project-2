@@ -7,7 +7,6 @@ from seed_data import (
     seed_kurikulum,
     seed_ruangan,
     seed_akun,
-    seed_akun_dosen,
     seed_calon_mahasiswa_baru,
     seed_rencana_studi,
     seed_dosen_pengampu,
@@ -26,7 +25,6 @@ def main():
     seed_ruangan()
 
     seed_akun()
-    seed_akun_dosen()
     seed_calon_mahasiswa_baru()
 
     seed_rencana_studi()
