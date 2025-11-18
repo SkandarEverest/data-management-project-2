@@ -490,6 +490,7 @@ def seed_rencana_studi():
                     kodeMatkul=mk["kodeMatkul"],
                     disetujui=random.random() > 0.1,
                     nilai=random.choice(nilai_enum) if sem < 4 else None,
+                    sks=mk["sks"],
                 ))
 
             # simulasi status KRS

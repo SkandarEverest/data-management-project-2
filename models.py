@@ -112,6 +112,7 @@ class MataKuliahRS(BaseModel):
     kodeMatkul: str
     disetujui: bool
     nilai: Optional[str] = None
+    sks: int
 
 class RencanaStudi(BaseModel):
     nim: str
